@@ -1,0 +1,27 @@
+{
+  "scriptFile": "__init__.py",
+  "bindings": [
+    {
+      "name": "msg",
+      "type": "queueTrigger",
+      "direction": "in",
+      "queueName": "rfasterqueue",
+      "connection": "wheretolivefuncs_STORAGE"
+    },
+    {
+      "type": "queue",
+      "direction": "out",
+      "name": "msgout",
+      "queueName": "rfasterqueue",
+      "connection": "wheretolivefuncs_STORAGE"
+    },
+    {
+      "name": "outputblob",
+      "type": "blob",
+      "dataType": "binary",
+      "path": "rfaster/{queueTrigger}.pq",
+      "connection": "wheretolivefuncs_DURABLESTORAGE",
+      "direction": "out"
+    }
+  ]
+}
