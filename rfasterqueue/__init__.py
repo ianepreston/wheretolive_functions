@@ -1,5 +1,6 @@
 import logging
-import io
+# import io
+from .scraper import get_listings_page, listings_page_to_df
 import azure.functions as func
 
 
@@ -7,8 +8,11 @@ def main(msg: func.QueueMessage, msgout: func.Out[func.QueueMessage], outputblob
     msg_in = msg.get_body().decode('utf-8')
     base, page = msg_in.split("page_")
     page_int = int(page)
-    blob_body = io.StringIO(msg_in)
-    outputblob.set(blob_body.getvalue())
-    if page_int < 3:
+    listings_page = listings_page_to_df(get_listings_page(city_id=1, page=page_int))
+    # blob_body = io.BytesIO()
+    listings_page.to_parquet("listing.pq", engine="fastparquet")
+    with open("listing.pq", "rb") as file:
+        outputblob.set(file.read())
+    if len(listings_page) > 0:
         update_msg = f"{base}page_{page_int + 1}"
         msgout.set(update_msg)
