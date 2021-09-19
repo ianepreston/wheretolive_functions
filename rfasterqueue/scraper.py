@@ -1,5 +1,6 @@
 """Rentfaster Scraper."""
 import datetime as dt
+import logging
 import json
 import re
 import pandas as pd
@@ -12,6 +13,7 @@ from typing import Optional
 
 from pydantic import BaseModel
 from pydantic import Field
+import pydantic
 
 
 def _avdate_parser(avdate: str) -> Optional[dt.date]:
@@ -258,12 +260,14 @@ def get_listings_page(city_id: int = 1, page: int = 0) -> List[RFasterListingSum
     # other custom schemes
     url = f"https://www.rentfaster.ca/api/search.json?proximity_type=location-city&novacancy=0&cur_page={page}&city_id={city_id}"  # noqa: E510
     r = urllib.request.urlopen(url)  # noqa: S310
-    data = json.loads(r.read())
-    results = [
-        RFasterListingSummary(**_parse_listing(result))
-        for result in data["listings"]
-        if _is_valid(result)
-    ]
+    data = json.loads(r.read())["listings"]
+    results = []
+    for listing in data:
+        if _is_valid(listing):
+            try:
+                results.append(RFasterListingSummary(**_parse_listing(listing)))
+            except pydantic.ValidationError:
+                logging.info(f"Couldn't validate {listing}")
     return results
 
 def listings_page_to_df(listings: List[RFasterListingSummary]) -> pd.DataFrame:
