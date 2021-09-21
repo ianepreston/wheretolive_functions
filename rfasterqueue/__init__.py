@@ -1,5 +1,6 @@
 import logging
-# import io
+import pyarrow as pa
+import pyarrow.parquet as pq
 from .scraper import get_listings_page, listings_page_to_df
 import azure.functions as func
 
@@ -16,8 +17,9 @@ def main(msg: func.QueueMessage, msgout: func.Out[func.QueueMessage], outputblob
     else:
         listings_page = listings_page_to_df(listings_json)
         logging.info(f"Retrieved listings page of shape {listings_page.shape}")
-        listings_page.to_parquet("listing.pq", engine="fastparquet")
-        with open("listing.pq", "rb") as file:
-            outputblob.set(file.read())
+        table = pa.Table.from_pandas(listings_page)
+        buf = pa.BufferOutputStream()
+        pq.write_table(table, buf)
+        outputblob.set(buf.getvalue().to_pybytes())
         update_msg = f"{base}page_{page_int + 1}"
         msgout.set(update_msg)

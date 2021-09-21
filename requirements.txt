@@ -5,4 +5,4 @@
 azure-functions
 pydantic
 pandas
-fastparquet
+pyarrow
